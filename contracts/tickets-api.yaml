@@ -1,0 +1,288 @@
+openapi: 3.0.3
+info:
+  title: API de tickets de soporte Panini
+  version: 0.1.0
+  description: Contrato API para tickets internos de soporte de Panini relacionados con proveedores, distribución, inventario y logística para el álbum FIFA World Cup 2026.
+servers:
+  - url: https://api.example.panini.local
+    description: Marcador de posición para servidor futuro
+paths:
+  /auth/login:
+    post:
+      summary: Simular inicio de sesión de operador
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Inicio de sesión aceptado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+  /tickets:
+    get:
+      summary: Obtener tickets de soporte
+      operationId: getTickets
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Número de página solicitado, empezando en 1.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Cantidad máxima de tickets por página.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: category
+          in: query
+          required: false
+          description: Categoría usada para filtrar tickets antes de aplicar paginación.
+          schema:
+            $ref: "#/components/schemas/TicketCategory"
+      responses:
+        "200":
+          description: Página de tickets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedTicketResponse"
+    post:
+      summary: Crear un ticket de soporte
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: Ticket creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketResponse"
+  /tickets/{ticketId}:
+    get:
+      summary: Obtener un ticket por ID
+      operationId: getTicketById
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detalles del ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketResponse"
+        "404":
+          description: Ticket no encontrado
+  /tickets/{ticketId}/status:
+    patch:
+      summary: Actualizar estado del ticket
+      operationId: updateTicketStatus
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketStatusRequest"
+      responses:
+        "200":
+          description: Estado del ticket actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketResponse"
+  /tickets/{ticketId}/priority:
+    patch:
+      summary: Actualizar prioridad del ticket
+      operationId: updateTicketPriority
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketPriorityRequest"
+      responses:
+        "200":
+          description: Prioridad del ticket actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketResponse"
+components:
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - userName
+        - role
+      properties:
+        accessToken:
+          type: string
+        userName:
+          type: string
+        role:
+          type: string
+    PaginatedTicketResponse:
+      type: object
+      required:
+        - items
+        - page
+        - pageSize
+        - totalItems
+        - totalPages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketResponse"
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        totalItems:
+          type: integer
+          example: 1250
+        totalPages:
+          type: integer
+          example: 63
+    TicketResponse:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - priority
+        - status
+        - supplier
+        - createdAt
+        - category
+        - distributionRegion
+      properties:
+        id:
+          type: string
+          example: TCK-1001
+        title:
+          type: string
+          example: Faltan sobres de estampas en envío mayorista
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        supplier:
+          type: string
+          example: Suministros Coleccionables Globales
+        createdAt:
+          type: string
+          format: date
+        category:
+          $ref: "#/components/schemas/TicketCategory"
+        distributionRegion:
+          type: string
+          example: Norteamérica
+    CreateTicketRequest:
+      type: object
+      required:
+        - title
+        - description
+        - priority
+        - supplier
+        - category
+        - distributionRegion
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        supplier:
+          type: string
+        category:
+          $ref: "#/components/schemas/TicketCategory"
+        distributionRegion:
+          type: string
+    UpdateTicketStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+    UpdateTicketPriorityRequest:
+      type: object
+      required:
+        - priority
+      properties:
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+    TicketStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - BLOCKED
+        - RESOLVED
+    TicketPriority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+    TicketCategory:
+      type: string
+      enum:
+        - SUPPLIER
+        - LOGISTICS
+        - DISTRIBUTION
+        - INVENTORY
+        - SUPPORT_INCIDENT
